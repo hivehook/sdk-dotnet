@@ -1,0 +1,78 @@
+using System.Collections.Generic;
+using System.Threading;
+using System.Threading.Tasks;
+using Hivehook.Types;
+
+namespace Hivehook.Resources;
+
+/// <summary>Manage outbound webhook applications.</summary>
+public sealed class ApplicationService : BaseService
+{
+    private const string Fragment = "id name uid createdAt";
+
+    /// <summary>Initialize the service.</summary>
+    /// <param name="transport">Shared GraphQL transport.</param>
+    public ApplicationService(GraphQLTransport transport) : base(transport) { }
+
+    /// <summary>List applications.</summary>
+    /// <param name="options">Optional filter/pagination variables.</param>
+    /// <param name="cancellationToken">Optional cancellation token.</param>
+    /// <returns>A paginated list of applications.</returns>
+    public async Task<ListResult<Application>> ListAsync(Dictionary<string, object?>? options = null, CancellationToken cancellationToken = default)
+    {
+        var query = $@"query($search: String, $limit: Int, $offset: Int, $after: String, $first: Int) {{
+            applications(search: $search, limit: $limit, offset: $offset, after: $after, first: $first) {{
+                nodes {{ {Fragment} }}
+                pageInfo {{ total limit offset endCursor hasNextPage }}
+            }}
+        }}";
+        var vars = BuildVariables(options, "search", "limit", "offset", "after", "first");
+        var data = await Transport.ExecuteAsync(query, vars, cancellationToken).ConfigureAwait(false);
+        return DeserializeList<Application>(GetField(data, "applications"));
+    }
+
+    /// <summary>Fetch an application by id.</summary>
+    /// <param name="id">Application UUID.</param>
+    /// <param name="cancellationToken">Optional cancellation token.</param>
+    /// <returns>The application, or <c>null</c> if not found.</returns>
+    public async Task<Application?> GetAsync(string id, CancellationToken cancellationToken = default)
+    {
+        var query = $"query($id: UUID!) {{ application(id: $id) {{ {Fragment} }} }}";
+        var data = await Transport.ExecuteAsync(query, new() { ["id"] = id }, cancellationToken).ConfigureAwait(false);
+        return DeserializeNullable<Application>(GetField(data, "application"));
+    }
+
+    /// <summary>Create an application.</summary>
+    /// <param name="input">Create input payload.</param>
+    /// <param name="cancellationToken">Optional cancellation token.</param>
+    /// <returns>The created application.</returns>
+    public async Task<Application> CreateAsync(Dictionary<string, object?> input, CancellationToken cancellationToken = default)
+    {
+        var query = $"mutation($input: CreateApplicationInput!) {{ createApplication(input: $input) {{ {Fragment} }} }}";
+        var data = await Transport.ExecuteAsync(query, new() { ["input"] = input }, cancellationToken).ConfigureAwait(false);
+        return Deserialize<Application>(GetField(data, "createApplication"));
+    }
+
+    /// <summary>Update an application.</summary>
+    /// <param name="id">Application UUID.</param>
+    /// <param name="input">Update input payload.</param>
+    /// <param name="cancellationToken">Optional cancellation token.</param>
+    /// <returns>The updated application.</returns>
+    public async Task<Application> UpdateAsync(string id, Dictionary<string, object?> input, CancellationToken cancellationToken = default)
+    {
+        var query = $"mutation($id: UUID!, $input: UpdateApplicationInput!) {{ updateApplication(id: $id, input: $input) {{ {Fragment} }} }}";
+        var data = await Transport.ExecuteAsync(query, new() { ["id"] = id, ["input"] = input }, cancellationToken).ConfigureAwait(false);
+        return Deserialize<Application>(GetField(data, "updateApplication"));
+    }
+
+    /// <summary>Delete an application.</summary>
+    /// <param name="id">Application UUID.</param>
+    /// <param name="cancellationToken">Optional cancellation token.</param>
+    /// <returns><c>true</c> on success.</returns>
+    public async Task<bool> DeleteAsync(string id, CancellationToken cancellationToken = default)
+    {
+        var query = "mutation($id: UUID!) { deleteApplication(id: $id) }";
+        var data = await Transport.ExecuteAsync(query, new() { ["id"] = id }, cancellationToken).ConfigureAwait(false);
+        return GetField(data, "deleteApplication").GetBoolean();
+    }
+}
