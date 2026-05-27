@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Text.Json;
 using System.Threading;
+using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using Hivehook.Types;
 
@@ -155,5 +156,26 @@ public sealed class OrganizationService : BaseService
         var query = $"mutation($organizationId: UUID!) {{ disableOTLP(organizationId: $organizationId) {{ {Fragment} }} }}";
         var data = await Transport.ExecuteAsync(query, new() { ["organizationId"] = organizationId }, cancellationToken).ConfigureAwait(false);
         return Deserialize<Organization>(GetField(data, "disableOTLP"));
+    }
+
+    /// <summary>Fetches every page and yields each Organization as an async stream.</summary>
+    public async IAsyncEnumerable<Organization> ListAllAsync(Dictionary<string, object?>? options = null, [EnumeratorCancellation] CancellationToken cancellationToken = default)
+    {
+        var pageOptions = options == null ? new Dictionary<string, object?>() : new Dictionary<string, object?>(options);
+        if (!pageOptions.TryGetValue("limit", out var limitObj) || limitObj == null)
+            pageOptions["limit"] = 100;
+        var offset = 0;
+        if (pageOptions.TryGetValue("offset", out var offsetObj) && offsetObj is int o)
+            offset = o;
+        while (true)
+        {
+            pageOptions["offset"] = offset;
+            var page = await ListAsync(pageOptions, cancellationToken).ConfigureAwait(false);
+            foreach (var node in page.Nodes)
+                yield return node;
+            if (!page.PageInfo.HasNextPage || page.Nodes.Count == 0)
+                yield break;
+            offset += page.Nodes.Count;
+        }
     }
 }

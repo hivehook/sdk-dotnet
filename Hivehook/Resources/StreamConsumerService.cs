@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Threading;
+using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using Hivehook.Types;
 
@@ -76,5 +77,26 @@ public sealed class StreamConsumerService : BaseService
         var query = $"mutation($id: UUID!, $sequence: Int!) {{ advanceConsumerCursor(id: $id, sequence: $sequence) {{ {Fragment} }} }}";
         var data = await Transport.ExecuteAsync(query, new() { ["id"] = id, ["sequence"] = sequence }, cancellationToken).ConfigureAwait(false);
         return Deserialize<StreamConsumer>(GetField(data, "advanceConsumerCursor"));
+    }
+
+    /// <summary>Fetches every page and yields each StreamConsumer as an async stream.</summary>
+    public async IAsyncEnumerable<StreamConsumer> ListAllAsync(string streamId, Dictionary<string, object?>? options = null, [EnumeratorCancellation] CancellationToken cancellationToken = default)
+    {
+        var pageOptions = options == null ? new Dictionary<string, object?>() : new Dictionary<string, object?>(options);
+        if (!pageOptions.TryGetValue("limit", out var limitObj) || limitObj == null)
+            pageOptions["limit"] = 100;
+        var offset = 0;
+        if (pageOptions.TryGetValue("offset", out var offsetObj) && offsetObj is int o)
+            offset = o;
+        while (true)
+        {
+            pageOptions["offset"] = offset;
+            var page = await ListAsync(streamId, pageOptions, cancellationToken).ConfigureAwait(false);
+            foreach (var node in page.Nodes)
+                yield return node;
+            if (!page.PageInfo.HasNextPage || page.Nodes.Count == 0)
+                yield break;
+            offset += page.Nodes.Count;
+        }
     }
 }

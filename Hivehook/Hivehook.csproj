@@ -10,7 +10,7 @@
     <NoWarn>$(NoWarn);CS1591</NoWarn>
 
     <PackageId>Hivehook</PackageId>
-    <Version>0.1.0</Version>
+    <Version>0.1.1</Version>
     <Authors>Hivehook</Authors>
     <Company>Hivehook</Company>
     <Description>Official Hivehook .NET SDK. Manage sources, destinations, subscriptions, applications, endpoints, and verify inbound webhook signatures.</Description>
