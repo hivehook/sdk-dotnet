@@ -13,7 +13,7 @@
     <Version>0.1.1</Version>
     <Authors>Hivehook</Authors>
     <Company>Hivehook</Company>
-    <Description>Official Hivehook .NET SDK. Manage sources, destinations, subscriptions, applications, endpoints, and verify inbound webhook signatures.</Description>
+    <Description>Official .NET client for Hivehook, webhook infrastructure for modern teams (inbound and outbound).</Description>
     <PackageTags>hivehook;webhook;webhooks;graphql;sdk</PackageTags>
     <PackageProjectUrl>https://hivehook.com</PackageProjectUrl>
     <RepositoryUrl>https://github.com/hivehook/sdk-dotnet</RepositoryUrl>
