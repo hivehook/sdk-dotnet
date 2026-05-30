@@ -79,6 +79,23 @@ public sealed class StreamService : BaseService
         return GetField(data, "deleteStream").GetBoolean();
     }
 
+    /// <summary>List persisted entries from a stream, ordered by sequence.</summary>
+    public async Task<ListResult<StreamEntry>> EntriesAsync(string streamId, long? afterSequence = null, int? limit = null, CancellationToken cancellationToken = default)
+    {
+        const string entryFragment = "id streamId sequence messageId eventType payload createdAt";
+        var query = $@"query($streamId: UUID!, $afterSequence: Int, $limit: Int) {{
+            streamEntries(streamId: $streamId, afterSequence: $afterSequence, limit: $limit) {{
+                nodes {{ {entryFragment} }}
+                pageInfo {{ total limit offset endCursor hasNextPage }}
+            }}
+        }}";
+        var vars = new Dictionary<string, object?> { ["streamId"] = streamId };
+        if (afterSequence is { } a) vars["afterSequence"] = a;
+        if (limit is { } l) vars["limit"] = l;
+        var data = await Transport.ExecuteAsync(query, vars, cancellationToken).ConfigureAwait(false);
+        return DeserializeList<StreamEntry>(GetField(data, "streamEntries"));
+    }
+
     /// <summary>Fetches every page and yields each HivehookStream as an async stream.</summary>
     public async IAsyncEnumerable<HivehookStream> ListAllAsync(Dictionary<string, object?>? options = null, [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {

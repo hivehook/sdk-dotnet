@@ -29,6 +29,19 @@ public sealed record StreamConsumer(
 );
 
 /// <summary>
+/// A single message persisted in a Stream's log.
+/// </summary>
+public sealed record StreamEntry(
+    [property: JsonPropertyName("id")] string Id = "",
+    [property: JsonPropertyName("streamId")] string StreamId = "",
+    [property: JsonPropertyName("sequence")] long Sequence = 0,
+    [property: JsonPropertyName("messageId")] string? MessageId = null,
+    [property: JsonPropertyName("eventType")] string EventType = "",
+    [property: JsonPropertyName("payload")] string Payload = "",
+    [property: JsonPropertyName("createdAt")] string CreatedAt = ""
+);
+
+/// <summary>
 /// A sink that drains a stream to an external destination (S3, Kafka, etc.).
 /// </summary>
 public sealed record StreamSink(

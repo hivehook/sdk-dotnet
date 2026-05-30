@@ -58,6 +58,8 @@ public sealed class HivehookClient : IDisposable
     public UserService Users { get; }
     /// <summary>Query the audit log.</summary>
     public AuditLogService AuditLogs { get; }
+    /// <summary>Manage meta-event webhook configurations.</summary>
+    public MetaEventConfigService MetaEventConfigs { get; }
 
     private readonly HttpClient _httpClient;
     private readonly bool _ownsHttpClient;
@@ -106,6 +108,7 @@ public sealed class HivehookClient : IDisposable
         Organizations = new OrganizationService(transport);
         Users = new UserService(transport);
         AuditLogs = new AuditLogService(transport);
+        MetaEventConfigs = new MetaEventConfigService(transport);
     }
 
     /// <summary>
